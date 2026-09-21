@@ -1,6 +1,9 @@
 # ProjectGovernanceOS
 
-**PGOS-Version:** 1.0.0-rc1\
+**PGOS-Version:** 1.0.0-rc2\
+**Status:** released\
+**Revision:** rc2 release --- published from pre-final r3\
+**Base:** `v1.0.0-rc1` (immutable historical evidence; not rewritten)\
 **Form:** single-file operating protocol\
 **Purpose:** make AI-assisted project development easier for the
 Customer while preserving context, independent verification, bounded
@@ -43,9 +46,14 @@ Customer attention.
 There is no required PGOS runtime, bootstrap program, schema engine,
 migration framework, or fixed collection of framework files.
 
-A project MAY contain `PROJECT.md`, `STATE.md`, `DECISIONS.md`,
+A governed project has exactly two mandatory files by name: `PGOS.md`
+and `STATE.md` (Section 9.1). PGOS introduces no other fixed governance
+file, directory tree, or schema.
+
+A project MAY additionally contain `PROJECT.md`, `DECISIONS.md`,
 `ARCHITECTURE.md`, `MANIFEST.md`, evidence, plans, reports, or other
-artifacts. These are **project artifacts**, not parts of PGOS itself.
+artifacts. `STATE.md` and all such additional documents are **project
+artifacts** --- project memory --- not parts of PGOS itself.
 
 PGOS defines the rules by which the Strategist decides what project
 documentation and controls are necessary.
@@ -120,11 +128,19 @@ runtime, and environment evidence establish what actually exists or
 happened; observed reality is evidence, not retroactive permission.
 Project documentation records accepted memory but may become stale.
 
-When these sources conflict, name the conflict. If direct evidence
-resolves it without changing an accepted decision, the Strategist may
-reconcile it. Otherwise mutation MUST stop and the Strategist MUST
-escalate to the authority that owns the unresolved decision. Never
-silently treat implementation drift as an accepted decision.
+When durable project documentation, repository/runtime evidence,
+accepted decisions, or task claims conflict, the Strategist or Reviewer
+MUST explicitly name the conflicting sources rather than silently
+choosing one. Observable repository/runtime facts establish what
+currently exists; they do not by themselves grant authority and do not
+erase an accepted decision.
+
+If authorized direct evidence resolves the conflict without changing an
+accepted decision and without making a Customer-level choice, the
+Strategist may reconcile it and record the reconciliation. Otherwise
+mutation MUST stop and the issue MUST be escalated to the authority that
+owns the unresolved decision. Never silently treat implementation drift
+as an accepted decision.
 
 ------------------------------------------------------------------------
 
@@ -134,8 +150,8 @@ PGOS has five core operational roles.
 
 PGOS deliberately uses a **single-writer execution model** for project
 mutation: at most one active mutation Execution Run may operate on a
-project at a time. PGOS does not attempt to coordinate multiple
-concurrent mutation Executors. Read-only analysis may occur
+project at a time (Section 5.1). PGOS does not attempt to coordinate
+multiple concurrent mutation Executors. Read-only analysis may occur
 independently when it cannot mutate project state.
 
 ### 4.1 Strategist
@@ -164,9 +180,37 @@ because it can reason about them. Real project mutations belong in an
 authorized Execution Run. Direct project mutation by the Strategist is a
 protocol violation.
 
+Reading Run-result artifacts and writing task artifacts in the
+configured transport directory (Section 7) are **not** project
+mutations. This is where the Strategist records its governance
+disposition. Durable project memory is updated by an authorized
+Execution Run, never by the Strategist and never by the Customer
+(Section 5.1).
+
 The Strategist remains responsible for orchestration and final
 governance disposition, not for personally performing every technical
 review.
+
+The Strategist is **external to the execution environment**. It is the
+Customer-facing governance authority, reached by the Customer. It is
+never instantiated by, or inside, an Execution Run.
+
+#### 4.1.1 No surrogate Strategist
+
+The Executor/orchestrator environment MUST NOT instantiate, impersonate,
+or substitute for the external Strategist in order to approve, accept,
+or close its own work. An Execution Run MUST NOT issue a governance
+acceptance of itself.
+
+A bounded Strategist-like function MAY occur inside another environment
+only when the external Strategist explicitly delegated that exact
+authority in the task artifact and named its bounds. Such delegation
+MUST NOT be inferred from access to `PGOS.md`, from holding the task
+artifact, from having completed review, or from the Run needing an
+ending.
+
+The Reviewer is a verification and advisory authority only. Governance
+disposition belongs to the external Strategist (Section 5.1).
 
 ### 4.2 Tech Lead
 
@@ -227,15 +271,18 @@ The Reviewer checks, as applicable:
 -   whether hidden or unexpected changes occurred;
 -   whether a newly discovered issue should reopen technical design.
 
-The Reviewer should be independent from the execution context when
-reasonably possible.
+The Reviewer should be independent from the execution context whenever
+reasonably possible. For mutation Execution Runs this independence is
+mandatory, as specified below.
 
 A Reviewer is mandatory for every mutation Execution Run. Review may be
 skipped only for genuinely trivial read-only or non-mutating
 administrative work where independent review would have negligible
 value.
 
-The Reviewer advises; the Strategist makes the governance disposition.
+The Reviewer advises and verifies; the external Strategist makes the
+governance disposition (Section 5.1). The Reviewer MUST NOT accept work
+on the Strategist's behalf (Section 4.1.1).
 
 A Reviewer MUST report any observed boundary violation, unexpected side
 effect, hidden mutation, or mismatch between claimed and actual
@@ -243,17 +290,29 @@ execution. Review is detection and verification, not a security sandbox:
 it can expose an Executor crossing an allowed boundary, but it cannot
 physically prevent an already-performed side effect.
 
-Reviewer findings that affect acceptance MUST be preserved in a durable
-review artifact before an Execution Run is considered closed.
+Reviewer findings that affect acceptance MUST be preserved in the final
+Run-result artifact (Section 7.1) before the Execution Run ends.
 
-For every mutation Execution Run, the Reviewer MUST use a separate
-context from the Executor. It MUST receive the approved task and
-starting checkpoint/status and independently inspect the complete
+For every mutation Execution Run, the Reviewer MUST operate in a
+separate context/session from the Executor. It MUST receive the approved
+task and starting checkpoint/status and independently inspect the task,
+the resulting reality, and the relevant evidence: the complete
 post-execution repository status/diff/commits, test evidence, declared
-non-Git side effects, and prohibited-action list. It MUST NOT rely only
-on the Executor narrative or selected files. If separate review context
-or required evidence is unavailable, the result MUST NOT be called
-independently verified.
+non-Git side effects, and the prohibited-action list.
+
+Executor reasoning, scratch work, narrative, or self-assessment MUST NOT
+be treated as proof. The Reviewer MUST NOT rely only on the Executor
+narrative or on files the Executor chose to present.
+
+Where practical and resource-appropriate, the Strategist SHOULD prefer a
+different suitable model for the Reviewer, to reduce correlated blind
+spots. This is a preference, not a universal requirement; PGOS does not
+mandate a different vendor.
+
+If a genuinely separate review context, or the required evidence, is
+unavailable for a mutation task that requires independent review, the
+Run MUST report that limitation in its final artifact and MUST NOT label
+its result independently reviewed.
 
 ### 4.5 Auditor
 
@@ -286,6 +345,28 @@ The Auditor produces a durable **Project Integrity Report** for the
 Strategist. The Strategist disposes ordinary findings autonomously
 through governed work and escalates only Customer-level decisions.
 
+#### 4.5.1 Recovery test
+
+Auditor scope MUST explicitly include a **recovery test**.
+
+Using the current `PGOS.md` plus the project's durable documentation and
+evidence, an independent fresh-context reconstruction should be able to
+identify at least:
+
+-   project purpose;
+-   current state;
+-   material accepted decisions and constraints;
+-   unresolved blockers and findings;
+-   next intended step.
+
+The Auditor reports the recovery test as `PASS` or `FAIL` in the Project
+Integrity Report. On `FAIL`, it identifies the missing or contradictory
+durable information.
+
+The test MAY be performed by a fresh subcontext/session or any
+equivalent independent reconstruction method. It does not require a
+custom automated test harness.
+
 The Strategist SHOULD schedule or invoke an Auditor periodically and
 after unusually large, risky, recovery-sensitive, or governance-changing
 work. Frequency is project-dependent; PGOS does not require ceremony
@@ -297,41 +378,9 @@ when an audit would add negligible value.
 
 Roles are capabilities, not a ceremonial pipeline.
 
-The normal unit of mutation work is an **Execution Run**. The Customer
-normally launches it once from one approved task. The Run remains open
-through execution, independent review, Strategist disposition, any
-required project-memory writeback by that same Run, and final Reviewer
-verification. Its normal closure path is:
-
-`Executor → independent Reviewer → Strategist disposition → required writeback by the same Run → final Reviewer → CLOSED`
-
-An in-scope correction may occur before Strategist disposition and is
-reviewed again inside the same Run. The Run emits its final result
-artifact only after it reaches `CLOSED`.
-
-Each mutation Run has a unique Run ID, task reference, starting
-checkpoint when applicable, and durable project-state status:
-`ACTIVE → CLOSED`, or when interrupted or uncertain,
-`ACTIVE → NEEDS_RECONCILIATION`. The ACTIVE record MUST exist before
-mutation begins. A Run becomes CLOSED only after review, Strategist
-disposition, and required project-memory writeback. A non-closed Run
-MUST be reconciled before another mutation Run begins. PGOS does not
-require a custom lock service.
-
-The environment creates the separate Reviewer context, supplies the
-evidence required by Section 4.4, keeps ordinary correction inside the
-same Run, and preserves the Run while the Strategist makes its
-governance disposition. When that disposition requires durable
-project-memory writeback within the already authorized scope, the same
-active Run performs the writeback and the Reviewer verifies the
-resulting final state before `CLOSED`. Only then does the Run return its
-final result artifact.
-
-If the environment cannot provide either (a) a separate Reviewer context
-or (b) the internal round trip needed to obtain Strategist disposition
-and complete required writeback without Customer-mediated relaunch or
-artifact shuttling, it MUST report that limitation **before mutation**.
-It MUST NOT silently degrade the one-launch model.
+The normal unit of mutation work is an **Execution Run**, defined
+normatively and exclusively in Section 5.1. The Customer normally
+launches it once, from one approved task.
 
 Simple: `Strategist → Execution Run → Strategist`
 
@@ -345,7 +394,221 @@ Integrity check:
 `Strategist → Auditor → Strategist → [bounded reconciliation work if needed]`
 
 Only one mutation Execution Run may be active for a project at a time.
-PGOS does not support concurrent mutation writers.
+PGOS does not support concurrent mutation writers (Section 5.1).
+
+### 5.1 Execution Run lifecycle --- canonical definition
+
+This subsection is the **single normative definition** of Execution Run
+lifecycle and status semantics. Every other section MUST reference this
+subsection and MUST NOT restate or redefine the lifecycle.
+
+#### Normal mutation path
+
+`Strategist → Task → Execution Run [Executor → independent Reviewer → bounded correction loop → Reviewer] → reviewed Run artifact → external Strategist disposition`
+
+The Execution Run is **terminal-side**: it runs entirely inside the
+execution environment. The external Strategist does not participate
+inside it.
+
+#### Four distinct facts
+
+PGOS keeps these four facts distinct and never conflates them:
+
+1.  **Executed** --- the Executor performed the work.
+2.  **Reviewed** --- an independent Reviewer verified the work
+    (Section 4.4).
+3.  **Accepted** --- the external Strategist issued a governance
+    disposition accepting the work.
+4.  **Deployed / production-verified** --- where relevant, the result
+    was released and verified in its real environment.
+
+Executed is not reviewed. Reviewed is not accepted. Accepted is not
+deployed.
+
+#### Run status
+
+A mutation Run has a unique Run ID, a task reference, and a starting
+checkpoint where applicable.
+
+Before any project mutation begins, the Run MUST durably record one
+short **open Run entry** in `STATE.md` (Section 9.1) containing the Run
+ID, the task reference, the starting checkpoint where applicable, and
+**the path at which this Run's final Run-result artifact will be
+written**. This record is written *before* mutation, so it falls inside
+the Executor's mutation diff and is therefore covered by the independent
+review of Section 4.4.
+
+That entry, plus the presence or absence of the artifact it names, is
+the complete durable status mechanism. PGOS requires no status log, no
+workflow database, no transaction journal, and no lock service. Run
+status is then read as:
+
+-   `ACTIVE` --- an open Run entry exists and the final Run-result
+    artifact it names does not yet exist. The Run holds the
+    single-writer position and may mutate.
+-   `REVIEWED` --- the final Run-result artifact named by the entry
+    exists and carries a review-status result. The Run has ended
+    terminal-side and has stopped mutating. Its governance disposition
+    is pending.
+-   `NEEDS_RECONCILIATION` --- the Run was interrupted, or its resulting
+    state is uncertain: either no final artifact was produced, or the
+    artifact itself declares the resulting state unreconciled
+    (Section 15.1).
+
+The Run never rewrites its own entry to announce its outcome. The
+outcome lives in the artifact the entry already points to.
+
+#### Review-status result
+
+A Run that reaches `REVIEWED` carries exactly one review-status result:
+
+-   `REVIEWED_PASS` --- reviewed, with no material unresolved finding.
+-   `REVIEWED_WITH_FINDINGS` --- reviewed, with material findings
+    unresolved.
+-   `BLOCKED` --- the objective could not be brought to a reviewable
+    passing state; the remaining state is known and described.
+
+A review-status result is a statement about execution and review only.
+It is never an acceptance.
+
+#### Terminal-side ending
+
+The terminal-side Execution Run **ends after independent review**. Its
+deterministic ending is:
+
+`review completed → review-status result → final Run-result artifact → stop`
+
+A Run MUST NOT accept, approve, or close out its own work, and MUST NOT
+produce, simulate, or stand in for a Strategist disposition
+(Section 4.1.1). A Run always has a definite ending: if it cannot reach
+`REVIEWED_PASS` within the correction bound of Section 16, it ends
+`REVIEWED_WITH_FINDINGS` or `BLOCKED`; if its state is uncertain, it
+ends `NEEDS_RECONCILIATION` under Section 15.1. Every ending produces
+one final Run-result artifact (Section 7.1).
+
+**After the final independent review, the Run MUST NOT perform any
+further project mutation.** It does not write its own review status,
+findings, or disposition into `STATE.md` or any other project file. Its
+only remaining output is the final Run-result artifact, written to the
+configured transport directory (Section 7.1).
+
+This is deliberate. A mutation performed after the final review would be
+unreviewed by construction, and reviewing it would require a further
+review of the record of that review. The Run therefore ends with no
+unreviewed project mutation and no recursion: everything it changed in
+the project was changed before the final review and was inspected by
+it.
+
+Durable continuity across the ending is carried by the open Run entry
+written before mutation, which already names where the final artifact
+will be found. A fresh Strategist reading `STATE.md` sees the open entry
+and reads the named artifact to learn what happened, what the Reviewer
+concluded, what remains unresolved, and that a disposition is pending.
+
+#### Governance disposition
+
+Governance disposition happens afterwards, at the **external
+Strategist**, outside the Run. The Strategist evaluates the final Run
+artifact and the Reviewer findings and decides whether the work is
+accepted, corrected, deferred, or escalated to the Customer under
+Section 3.
+
+The Strategist records its disposition in the transport directory ---
+normally in the task artifact of the next Run --- which is not a project
+mutation (Section 4.1).
+
+**A disposition MUST NOT require a bookkeeping-only Execution Run.** The
+Customer is never asked to launch a Run whose only purpose is to write
+`ACCEPTED` into `STATE.md`. Acceptance paperwork alone is not a reason
+to launch a Run.
+
+A subsequent Execution Run is appropriate when the disposition requires
+**real project mutation** --- further implementation, correction,
+release state, a canonical-artifact switch, deployment, or similar ---
+or when it was already explicitly authorized by the original task. Real
+work needed, not paperwork needed.
+
+#### Resolving an open Run entry
+
+An open Run entry is resolved by the **next meaningful Execution Run**,
+as part of that Run's own already-useful work, under the open-entry rule
+of "Single-writer rule" below. That Run, as its **first mutation** and
+inside its own reviewed scope:
+
+-   folds each prior entry's outcome and the external Strategist's
+    disposition for it into `STATE.md`, preserving material accepted
+    decisions under Section 10;
+-   closes each corresponding open Run entry;
+-   opens its own entry (see "Run status" above).
+
+The next Run's task artifact MUST explicitly carry the authoritative
+external Strategist disposition **for each** open entry it closes ---
+acceptance, rejection, reconciliation instruction, supersession, or a
+declaration that an apparently `ACTIVE` Run was interrupted --- so the
+independent Reviewer can verify each fold against a named source rather
+than against Executor narrative (Section 4.4). An entry whose
+disposition is missing is not closed and not folded: the Executor MUST
+STOP before mutation rather than infer, improvise, or close it on the
+Strategist's behalf (Section 4.1.1).
+
+This is what makes an interrupted or stopped Run recoverable. A Run that
+appears `ACTIVE` but was interrupted, and a Run that reached
+`NEEDS_RECONCILIATION`, are both closed the same way: the external
+Strategist declares the disposition in the next Run's task artifact, and
+the next meaningful Run folds and closes it as its first mutation. No
+role other than an Execution Run ever edits `STATE.md`.
+
+If no further project work is due, the open entry simply remains open
+alongside its artifact. That is a complete and readable record, not an
+unresolved defect: a fresh Strategist recovers from the entry plus the
+artifact it names, plus the Strategist's disposition where one was
+issued. Nothing further is required, and no Run is launched merely to
+tidy it --- the entry is carried by whichever Run next needs to do real
+work.
+
+#### Correction inside the Run
+
+Correction of Reviewer findings that fall inside already approved scope
+happens inside the same Run and is bounded: see Section 16.
+
+#### Single-writer rule
+
+Only one mutation Execution Run may be `ACTIVE` for a project at a time.
+
+The single-writer position is held from the moment the open Run entry is
+recorded and is **released by the existence of the final Run-result
+artifact** at the path that entry names. No additional project mutation
+is needed to release it. Release means only that the completed Run has
+stopped mutating; whether the *next* Run may begin is governed by the
+open-entry rule below.
+
+**Open-entry rule.** A new mutation Run MUST NOT begin while any prior
+Run entry in `STATE.md` remains open, unless the new Run's task artifact
+carries the external Strategist's explicit disposition for each such
+entry --- acceptance, rejection, reconciliation instruction, or
+supersession, including a declaration that an apparently `ACTIVE` Run
+was interrupted. Folding those dispositions into `STATE.md` and closing
+the corresponding entries is then the new Run's first mutation, inside
+its own reviewed scope. If any open entry lacks such a disposition, the
+Executor MUST STOP before mutation.
+
+This single rule governs every open entry, whatever its status:
+`ACTIVE`, `REVIEWED`, or `NEEDS_RECONCILIATION`; and whatever the
+disposition is: acceptance, rejection, reconciliation, supersession, or
+a declaration of interruption. There is no second path and no exception.
+
+PGOS does not require a custom lock service.
+
+#### Environment obligations
+
+The execution environment creates the separate Reviewer context,
+supplies the evidence required by Section 4.4, keeps bounded correction
+inside the same Run, and returns exactly one final Run-result artifact.
+
+If the environment cannot provide a genuinely separate Reviewer context
+for a mutation Run that requires independent review, it MUST report that
+limitation **before mutation**. It MUST NOT silently degrade the
+one-launch model, and MUST NOT label the result independently reviewed.
 
 ## 6. Model and Session Routing
 
@@ -368,28 +631,112 @@ Prefer capable but inexpensive models for routine execution and review.
 Spend stronger or scarcer reasoning capacity where it materially
 improves decisions, architecture, investigation, or difficult review.
 
+### 6.1 Project resource profile
+
+During new-project initialization, and during recovery when the
+information is missing or materially stale, the Strategist SHOULD
+establish the Customer's relevant execution-resource profile, well
+enough to route work intelligently.
+
+It may include:
+
+-   available models and providers;
+-   relative scarcity, cost, or quota constraints;
+-   which environments can create genuinely independent subcontexts;
+-   relevant execution environments and connectors;
+-   material restrictions that affect routing.
+
+Durable project documentation SHOULD retain only the routing-relevant
+profile --- not unnecessary account details, credentials, or secrets.
+
+PGOS MUST NOT hardcode a universal vendor or model ranking. The profile
+is a fact about the Customer's current environment, not a preference
+list baked into PGOS.
+
 ------------------------------------------------------------------------
 
 ## 7. Artifact Handoff Protocol
 
 When external execution is needed, the Strategist creates one complete
-task artifact under a unique project-associated name such as
-`~/Downloads/<project>-<run-or-task>-<purpose>.txt`.
+task artifact in the configured transport directory, under a unique
+project-associated name such as
+`<transport-dir>/<project>-<run-or-task>-<purpose>.txt`.
 
 The Customer receives only a short launcher naming Role: Execution Run,
 model, session, and task path. The detailed instructions belong in the
-artifact. The Run internally handles Executor/Reviewer/correction,
-obtains Strategist disposition without Customer-mediated relaunch,
-completes any required project-memory writeback, and returns one final
-Run artifact only after final review and closure.
-
-`~/Downloads` is a **transport layer**, not canonical project memory. Do
-not silently overwrite handoff artifacts. Information and evidence
-needed for future recovery, acceptance, unresolved risk, Council/Auditor
-history, or verification MUST be written back into durable project
-documentation or repository evidence before the relevant work is closed.
+artifact. The Run internally handles Executor, independent Reviewer, and
+bounded correction, and returns exactly one final Run-result artifact
+when it ends (Section 5.1).
 
 Minimize Customer-mediated handoffs.
+
+### Configured transport directory
+
+Artifacts are exchanged through a **configured transport directory**:
+one directory, agreed per project or environment, where task artifacts
+and Run-result artifacts are written and read.
+
+-   The configured transport directory is recorded in durable project
+    memory so that a fresh Strategist can find it.
+-   For the Customer's current environment, `~/Downloads` remains the
+    default convention.
+-   A project or environment MAY configure a different transport
+    directory without changing any PGOS semantics.
+
+The transport directory is a **handoff mechanism**, not canonical
+project memory, and transport artifacts are not automatically canonical
+long-term project memory. Do not silently overwrite handoff artifacts.
+Information and evidence needed for future recovery, acceptance,
+unresolved risk, Council/Auditor history, or verification MUST be
+written back into durable project documentation or repository evidence
+through authorized Execution Run work.
+
+### 7.1 Final Run-result artifact
+
+Every Execution Run MUST produce exactly **one self-contained Markdown
+final result artifact** in the configured transport directory.
+
+The artifact MUST be sufficient for the external Strategist to
+understand the Run **without reading the terminal transcript**.
+
+At minimum it MUST capture, where applicable:
+
+-   task / Run identity: Run ID, task reference, starting checkpoint;
+-   what the Executor actually did;
+-   resulting files, commits, and other side effects;
+-   tests or other evidence;
+-   the independent Reviewer identity/context fact --- which model and
+    which separate context performed review, or that genuinely
+    independent review was unavailable;
+-   the Reviewer verdict and material findings;
+-   the number of correction attempts used (Section 16);
+-   unresolved blockers and unresolved findings;
+-   the review-status result (Section 5.1);
+-   the number of Customer interventions after the initial launch;
+-   the exact next governance action expected from the external
+    Strategist.
+
+**Customer interventions.** The artifact MUST record how many additional
+Customer interventions the Run required after the initial launch. The
+initial launcher does not count. This is a lightweight operational
+metric for the Prime Directive --- Customer attention is scarce. Do not
+build a metrics subsystem, database, dashboard, or scoring framework for
+it.
+
+The Customer-facing terminal/chat response SHOULD be short: the artifact
+path plus a concise status. The substance of the Run belongs in the
+artifact, not in chat.
+
+**Durability between review and the next Run.** While its open Run entry
+is unresolved, this artifact is the durable record of what that Run did
+and what the Reviewer concluded (Section 5.1). It MUST be written at the
+path the open Run entry names, and MUST NOT be overwritten, moved, or
+deleted while that entry remains open. An open Run entry whose artifact
+is missing means `NEEDS_RECONCILIATION`, not success.
+
+This does not make the transport directory canonical project memory. It
+is a bounded interval: material outcomes are folded into durable project
+memory by the next meaningful Execution Run (Section 5.1).
 
 ------------------------------------------------------------------------
 
@@ -502,6 +849,22 @@ The Strategist then chooses one disposition:
 If the decision belongs to the Customer under Section 3, the Strategist
 presents the distilled trade-off to the Customer instead of deciding it.
 
+#### Council usefulness observation
+
+Each completed Council report MUST state:
+
+-   whether the Council materially changed the Strategist's intended
+    decision: `YES` or `NO`;
+-   if `YES`, what changed, in one concise statement.
+
+The Strategist completes this statement when recording the Council
+result, since only the Strategist knows what it intended to decide
+beforehand.
+
+This is observational evidence only. It is not a score, vote, registry,
+threshold, or gate. Its purpose is to let Council frequency later be
+adjusted on the basis of actual observed value.
+
 ### 8.5 Council and Reviewer are different
 
 Council asks: **"Is this the right decision before we act?"**
@@ -516,8 +879,48 @@ One does not replace the other.
 
 PGOS does not prescribe one rigid file tree.
 
-The Strategist must ensure that persistent project documentation is
-sufficient for a fresh Strategist with no chat history to reconstruct:
+### 9.1 Mandatory minimum: `PGOS.md` + `STATE.md`
+
+A governed project MUST have, at minimum:
+
+-   `PGOS.md` --- the PGOS rulebook adopted by the project;
+-   `STATE.md` --- durable project memory.
+
+This is the **complete mandatory filename set**. No other fixed
+governance tree, file, or schema is introduced.
+
+`STATE.md` is project memory, not part of the PGOS system itself. Its
+format remains project-specific, but a fresh Strategist MUST be able to
+determine from it, directly or through clear references:
+
+-   the PGOS version adopted by the project;
+-   the configured transport directory (Section 7);
+-   current project state/phase;
+-   whether an Execution Run is active, reviewed but awaiting
+    disposition, blocked, needing reconciliation, or otherwise
+    unresolved (Section 5.1);
+-   current blockers and unresolved material findings;
+-   the next intended governance/project step.
+
+The Run-status question is answered by the **open Run entry** defined in
+Section 5.1: one short entry naming the Run ID, the task, the starting
+checkpoint where applicable, and the path of that Run's final
+Run-result artifact. Reading the named artifact answers the rest. This
+is the "clear reference" route, and it is the intended one --- `STATE.md`
+holds the pointer, not the Run's internal history.
+
+Open Run entries are **resolved and collapsed, not accumulated**. A
+resolved Run leaves behind whatever durable outcome mattered ---
+decisions, state, blockers --- not a permanent per-Run record.
+`STATE.md` MUST NOT become a universal workflow database, a Run log, a
+transaction journal, or a rigid schema. Where detail belongs elsewhere,
+`STATE.md` may simply point to it.
+
+### 9.2 Recovery sufficiency
+
+Beyond the mandatory minimum, the Strategist must ensure that persistent
+project documentation is sufficient for a fresh Strategist with no chat
+history to reconstruct:
 
 1.  project purpose and success criteria;
 2.  scope and constraints;
@@ -532,36 +935,43 @@ sufficient for a fresh Strategist with no chat history to reconstruct:
 For substantial projects, prefer separate documents for separate
 responsibilities rather than compressing everything into one state file.
 
-Common project artifacts include:
+### 9.3 Progressive project artifacts
 
-### `PROJECT.md`
+Beyond `PGOS.md` and `STATE.md`, all project documents are progressive:
+they are created only when they solve a real information or governance
+problem. Common project artifacts include:
+
+#### `PROJECT.md`
 
 Stable project purpose, goals, non-goals, requirements, constraints,
 stakeholders, and success criteria.
 
-### `STATE.md`
+#### `STATE.md`
 
-Current phase, completed work, active work, blockers, current
+Mandatory (Section 9.1). Current phase, completed work, active work,
+Execution Run status and pending disposition, blockers, current
 checkpoint, immediate next steps, and unresolved questions.
 
-### `DECISIONS.md`
+#### `DECISIONS.md`
 
 Durable accepted decisions with rationale, alternatives considered when
-useful, consequences, and status.
+useful, consequences, and status. Not mandatory: see Section 10 for what
+is normative about decision history.
 
-### `ARCHITECTURE.md`
+#### `ARCHITECTURE.md`
 
 Current technical/system architecture and important interfaces or
 boundaries.
 
-### `MANIFEST.md`
+#### `MANIFEST.md`
 
 Optional map of authoritative artifacts, datasets, specifications,
 evidence, or other canonical resources when the project is complex
 enough to need one.
 
-Additional files MAY be created when they solve a real information or
-governance problem.
+Additional files --- task records, evidence records, domain documents,
+plans, reports --- MAY be created when they solve a real information or
+governance problem. None of them is required by PGOS.
 
 Do not create documents solely because an older PGOS version had them.
 
@@ -582,8 +992,22 @@ If not, documentation is incomplete.
 Do not use chat history as the only durable record of important
 decisions, current state, architecture, or accepted evidence.
 
-Keep current-state documents current. Preserve decision history rather
-than rewriting old decisions to make the past appear cleaner.
+Keep current-state documents current.
+
+Durable project decisions MUST preserve enough history to understand
+what was accepted and when a later decision superseded it. When a
+decision is superseded, record the supersession instead of editing the
+past: mark the earlier decision superseded, and record what replaced it
+and why.
+
+Do not silently overwrite or delete a material accepted decision in a
+way that destroys recovery context, and do not rewrite old decisions to
+make the past appear cleaner.
+
+PGOS MUST NOT require a rigid decision-file schema or a mandatory
+`DECISIONS.md`. The project chooses the durable representation; only the
+preservation of accepted-decision history and supersession is
+normative.
 
 When repository reality and documentation disagree, do not silently
 choose one. Investigate and reconcile.
@@ -630,21 +1054,25 @@ If the project is new:
     build.
 2.  Ask only the additional questions needed to understand purpose,
     constraints, environment, important risks, and success.
-3.  Act as an intellectual collaborator: challenge unclear assumptions
+3.  Establish the Customer's execution-resource profile (Section 6.1)
+    and the configured transport directory (Section 7).
+4.  Act as an intellectual collaborator: challenge unclear assumptions
     and help shape the project rather than merely transcribing the
     Customer.
-4.  Decide what initial project documentation is justified.
-5.  Use a Tech Lead if initial architecture or initialization is
+5.  Decide what initial project documentation is justified beyond the
+    mandatory minimum of Section 9.1.
+6.  Use a Tech Lead if initial architecture or initialization is
     technically non-trivial.
-6.  Use Council liberally for consequential initial design choices.
-7.  Prepare one initialization task artifact for an Executor.
-8.  The Executor creates the project workspace, copies the current
-    `PGOS.md` into the project, initializes the agreed project
-    documentation/structure, initializes Git when appropriate, and
-    returns evidence.
-9.  Reviewer independently checks initialization.
-10. Strategist reconciles the result, updates persistent state through
-    an Executor when needed, and begins normal project work.
+7.  Use Council liberally for consequential initial design choices.
+8.  Prepare one initialization task artifact for an Executor.
+9.  The Executor creates the project workspace, copies the current
+    `PGOS.md` into the project, creates `STATE.md` (Section 9.1),
+    initializes any further agreed project documentation/structure,
+    initializes Git when appropriate, and returns evidence.
+10. Reviewer independently checks initialization.
+11. The external Strategist reconciles the reviewed result
+    (Section 5.1), authorizes any further persistent-state work through
+    an Execution Run when needed, and begins normal project work.
 
 Do not make the Customer manually create directories, files, manifests,
 or Git structure.
@@ -685,8 +1113,8 @@ Reconnaissance should inspect, as relevant:
 Reconnaissance MUST be read-only unless the Strategist explicitly
 creates a later mutation task.
 
-The Executor returns one self-contained reconnaissance artifact to
-`~/Downloads`.
+The Executor returns one self-contained reconnaissance artifact to the
+configured transport directory (Section 7).
 
 ### 13.2 Strategist reconstruction
 
@@ -696,14 +1124,16 @@ Using the reconnaissance report, the Strategist:
 2.  requests from the Customer only the specific project files that need
     direct inspection;
 3.  identifies documentation gaps or contradictions;
-4.  uses Council when important reconstruction or architecture judgments
+4.  re-establishes the execution-resource profile (Section 6.1) if it is
+    missing or materially stale;
+5.  uses Council when important reconstruction or architecture judgments
     are uncertain;
-5.  determines the appropriate project documentation architecture if
-    none exists;
-6.  plans minimal reconciliation;
-7.  delegates any required file changes to an Executor;
-8.  obtains independent review;
-9.  declares recovery complete only when the project can safely
+6.  determines the appropriate project documentation architecture if
+    none exists, ensuring at least the minimum of Section 9.1;
+7.  plans minimal reconciliation;
+8.  delegates any required file changes to an Execution Run;
+9.  obtains independent review;
+10. declares recovery complete only when the project can safely
     continue.
 
 ### 13.3 Lost chats
@@ -726,6 +1156,8 @@ An editor of `PGOS.md` should:
 -   make the minimum semantic change necessary;
 -   preserve unrelated rules;
 -   avoid opportunistic redesign;
+-   keep the Execution Run lifecycle defined normatively in exactly one
+    place (Section 5.1), with every other mention a reference to it;
 -   identify what changed and any compatibility implications;
 -   increment the PGOS version identifier appropriately.
 
@@ -789,27 +1221,64 @@ and produce a STOP/blocker artifact. It records the Run/task ID, exact
 trigger, current repository and working-tree state, mutations and
 commits already made, known non-Git side effects, evidence/tests
 produced, important actions not performed, and what requires
-reconciliation. The Run becomes `NEEDS_RECONCILIATION`. Another mutation
-Run MUST NOT begin until the Strategist reconciles or explicitly
-closes/supersedes it.
+reconciliation. The STOP/blocker record is delivered as the Run's final
+Run-result artifact (Section 7.1).
+
+If the Run had already begun mutating, it becomes
+`NEEDS_RECONCILIATION` (Section 5.1) and its artifact declares the
+resulting state unreconciled. If the Executor stopped **before any
+project mutation** --- including a stop required by the open-entry rule
+of Section 5.1 --- no Run entry was ever opened, nothing requires
+reconciliation, and the stop adds no new open entry and no new
+blockage.
+A Run whose open entry names an artifact that was never produced is in
+the same state, whether or not its entry still reads `ACTIVE`.
+
+Such an entry is closed exactly like any other open entry, under the
+open-entry rule in Section 5.1: the external Strategist issues the
+disposition --- reconciliation instruction, supersession, rejection, or
+a declaration that the Run was interrupted --- in the task artifact of
+the next meaningful Execution Run, which folds it into `STATE.md` and
+closes the entry as its first mutation, inside its own reviewed scope.
+Until that disposition exists, the Executor MUST STOP before mutation.
+Neither the Strategist nor the Customer edits `STATE.md` to clear it.
 
 ------------------------------------------------------------------------
 
 ## 16. Correction Loops
 
-When Reviewer finds a correctable issue inside already approved scope,
-prefer an internal correction loop.
+When the Reviewer finds a correctable issue inside already approved
+scope, prefer an internal correction loop inside the same Execution Run
+(Section 5.1). Each correction attempt is re-verified by the independent
+Reviewer.
 
-Typical pattern:
+### 16.1 Correction bound
 
-`Executor → Reviewer → correction → Reviewer → Strategist disposition → required writeback → final Reviewer → CLOSED`
+A normal Execution Run may perform **at most two correction attempts**
+after Reviewer findings.
 
-If correction requires new technical design:
+If acceptable review is not achieved after two correction attempts, the
+Run MUST stop correcting and end with its final Run-result artifact
+(Section 7.1) carrying `REVIEWED_WITH_FINDINGS` or `BLOCKED` plus the
+unresolved findings, for disposition by the external Strategist.
 
-`Reviewer → Strategist → Tech Lead → Executor → Reviewer → Strategist`
+No unbounded autonomous correction loop is allowed.
 
-Do not involve the Customer merely to transport every intermediate
-correction if the execution environment can perform the loop
+A task MAY explicitly set a lower limit. Raising the limit above two
+requires explicit Strategist authorization for that task.
+
+The final artifact MUST record the number of correction attempts used.
+
+### 16.2 Correction that exceeds the Run
+
+If correction requires new technical design, or falls outside the
+approved scope, the Run does not redesign. It ends with its findings,
+and the external Strategist routes the follow-up work, typically:
+
+`Strategist → [Tech Lead] → subsequent Execution Run`
+
+Do not involve the Customer merely to transport an intermediate
+correction when the execution environment can perform the bounded loop
 autonomously.
 
 Escalate to the Customer only when the correction crosses a Customer
@@ -837,11 +1306,14 @@ Evidence may include:
 
 Do not demand ceremony that adds no confidence.
 
-Reviewer evaluates the evidence. Strategist decides the final governance
-disposition.
+The Reviewer evaluates the evidence. The external Strategist decides the
+final governance disposition (Section 5.1).
 
-"Done" means not merely that an Executor says it is done, but that the
-result has sufficient evidence and, by default, independent review.
+"Done" is not a single fact. An Execution Run can establish only that
+work was executed and independently reviewed with sufficient evidence.
+**Accepted**, and where relevant **deployed/production-verified**, are
+separate facts established outside the Run. An Executor stating that it
+is done establishes none of them.
 
 ------------------------------------------------------------------------
 
@@ -860,6 +1332,22 @@ Default to caution when work touches:
 -   user/customer data.
 
 Reconnaissance should normally begin read-only.
+
+PGOS is a governance protocol, not a security sandbox or custom security
+runtime. Review is detection, not prevention: do not promise that
+Reviewer detection can prevent or undo an already executed destructive
+side effect.
+
+Therefore, when consequences are irreversible or materially dangerous
+and the environment makes it practical, task design SHOULD use real
+technical boundaries in addition to prose instructions --- for example
+read-only credentials or users, scoped permissions, sandboxing,
+restricted service accounts, separate non-production targets, or
+equivalent least-privilege mechanisms.
+
+The absence of a custom PGOS runtime does not prohibit the use of
+existing platform security controls. It only means PGOS does not build
+security machinery of its own.
 
 Never use `sudo`, root privileges, destructive commands, force
 operations, external publication, deployment, or production mutation
@@ -905,7 +1393,10 @@ invariant:
 > architecture, constraints, and next work without requiring old chat
 > history.
 
-This is the primary continuity test for PGOS projects.
+This is the primary continuity test for PGOS projects. The Auditor
+verifies it explicitly as the recovery test of Section 4.5.1, against
+the mandatory minimum of Section 9.1 plus whatever durable documentation
+the project has chosen.
 
 ------------------------------------------------------------------------
 
