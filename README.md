@@ -11,7 +11,7 @@ directory.
 
 ## Status
 
-**Version:** `v1.0.0-rc2`\
+**Version:** `v1.0.0-rc3`\
 **Stage:** real-project pilot candidate
 
 This release candidate passed the final design/patch review and is

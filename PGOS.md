@@ -1,9 +1,9 @@
 # ProjectGovernanceOS
 
-**PGOS-Version:** 1.0.0-rc2\
+**PGOS-Version:** 1.0.0-rc3\
 **Status:** released\
-**Revision:** rc2 release --- published from pre-final r3\
-**Base:** `v1.0.0-rc1` (immutable historical evidence; not rewritten)\
+**Revision:** rc3 release --- published from rc3 candidate\
+**Base:** `v1.0.0-rc2`\
 **Form:** single-file operating protocol\
 **Purpose:** make AI-assisted project development easier for the
 Customer while preserving context, independent verification, bounded
@@ -304,15 +304,59 @@ Executor reasoning, scratch work, narrative, or self-assessment MUST NOT
 be treated as proof. The Reviewer MUST NOT rely only on the Executor
 narrative or on files the Executor chose to present.
 
-Where practical and resource-appropriate, the Strategist SHOULD prefer a
-different suitable model for the Reviewer, to reduce correlated blind
-spots. This is a preference, not a universal requirement; PGOS does not
-mandate a different vendor.
+For a mutation Execution Run:
+- the immediate Reviewer MUST be from the SAME model family as the Executor;
+- the Reviewer still MUST use a separate review context/session;
+- the Reviewer still independently inspects the executed work and evidence;
+- same-family immediate review is NOT a wholesale/convergence audit;
+- cross-family review MUST NOT be substituted for the ordinary immediate Reviewer.
+
+If Executor family is unknown, or the environment cannot provide a same-family
+Reviewer in a separate context/session:
+- report this BEFORE mutation;
+- do not perform family-dependent reviewed mutation work;
+- do not label the result reviewed / independently reviewed under the
+  immediate-review contract.
 
 If a genuinely separate review context, or the required evidence, is
 unavailable for a mutation task that requires independent review, the
 Run MUST report that limitation in its final artifact and MUST NOT label
 its result independently reviewed.
+
+### 4.4.1 Cross-family wholesale / convergence audit
+
+A separate review mode, not a new core role:
+- cross-family;
+- separate NEW / FRESH run;
+- no inherited prior chat;
+- receives the exact governing PGOS, artifact/evidence set, decision question and
+  relevant commit/hash baseline;
+- does NOT replace immediate review;
+- immediate review does NOT satisfy it.
+
+Triggers — use this mode only when:
+- explicit Customer or Strategist authority requests a wholesale/convergence audit;
+- PGOS itself requires one before Customer-authorized framework-canon cutover.
+
+Definitions and authority:
+- "Producer" = the Executor of the Run, or the author/producer of the artifact under audit.
+- Wholesale/convergence audit is an advisory review mode, not a new core role.
+- Its verdict does NOT accept work.
+- Governance disposition remains with the external Strategist.
+- Customer-owned decisions remain with the Customer.
+- It does NOT replace or duplicate the periodic Auditor role of Section 4.5.
+- It does NOT replace Council of Section 8.
+- It does NOT replace the ordinary same-family immediate Reviewer.
+
+Preferred wholesale/convergence auditors (illustrative examples within the
+Customer-confirmed snapshot filtered by cross-family eligibility; they do NOT
+establish a universal ranking):
+- Claude Opus 5.5
+- Claude Sonnet 5
+- Codex gpt-5.6-sol
+- Codex gpt-6-sol
+
+The chosen wholesale auditor MUST be from a DIFFERENT family than the producer.
 
 ### 4.5 Auditor
 
@@ -610,6 +654,44 @@ for a mutation Run that requires independent review, it MUST report that
 limitation **before mutation**. It MUST NOT silently degrade the
 one-launch model, and MUST NOT label the result independently reviewed.
 
+### 5.2 Long-Session Continuity
+
+Definition:
+"Phase" = a stage of the already-approved task WITHIN ONE Execution Run.
+
+Rules:
+- If there is no genuine Customer-owned decision, new material risk, authority gap,
+  or explicit PGOS/task STOP condition, the Executor and immediate Reviewer SHOULD
+  stay in the longest practical continuous sessions and proceed through multiple
+  consecutive phases already covered by the same authorization.
+
+- Do not stop merely to:
+  - return control to the Customer;
+  - create another handoff;
+  - restart the same role/session for ceremony.
+
+- A transition between phases already covered by one authorization is NOT a new
+  Customer decision boundary.
+
+- A phase outside the granted authority still requires new authorization.
+
+- Long-Session Continuity does NOT redefine Section 5.1.
+- It does NOT permit a Run to mutate after final review.
+- It does NOT relax the correction bound of Section 16.
+- It does NOT relax the Executor STOP Protocol of Section 15.1.
+- It does NOT relax the open-entry / single-writer rule.
+- It does NOT convert a later Execution Run into a phase of the earlier Run.
+- Consecutive Execution Runs remain governed by Section 5.1.
+
+- Long-session continuity MUST NOT merge Executor and Reviewer roles or contexts.
+  Existing separate-review-context requirements remain in force.
+- The immediate Reviewer independently inspects the relevant resulting state/evidence
+  for every work phase it reviews.
+
+- Elapsed time, token count or chat length alone are not sufficient reasons to stop.
+
+The Customer MUST NOT become a routine operator or message bus (Sections 1 and 3).
+
 ## 6. Model and Session Routing
 
 The Strategist chooses models based on capability, task type, cost,
@@ -649,18 +731,85 @@ It may include:
 Durable project documentation SHOULD retain only the routing-relevant
 profile --- not unnecessary account details, credentials, or secrets.
 
-PGOS MUST NOT hardcode a universal vendor or model ranking. The profile
-is a fact about the Customer's current environment, not a preference
-list baked into PGOS.
+PGOS MUST NOT hardcode a universal vendor or model ranking (the dated snapshot in
+Section 6.2 records family membership only). The profile is a fact about the
+Customer's current environment, not a preference list baked into PGOS.
+
+### 6.2 Current model-family snapshot
+
+Customer-confirmed snapshot dated 2026-09-29:
+
+Gemini-family:
+- Gemini 3.1 Pro High
+- Gemini 3.8 Flash
+- Gemini 3.7 Flash
+- Gemini 3.6 Flash
+
+Claude-family:
+- Claude Opus 5.5
+- Claude Opus 5
+- Claude Opus 4.8
+- Claude Opus 4.7
+- Claude Opus 4.6
+- Claude Sonnet 5.5
+- Claude Sonnet 5
+- Claude Sonnet 4.6
+- Claude Haiku 4.5
+
+Codex-family:
+- gpt-6-astra
+- gpt-6-sol
+- gpt-6-luna
+- gpt-5.6-sol
+- gpt-5.6-terra
+- gpt-5.6-luna
+- gpt-5.5
+
+Snapshot status and authority:
+1. The 2026-09-29 snapshot records family membership only.
+2. It is NOT:
+   - a universal vendor lock;
+   - a model-quality ranking;
+   - an availability guarantee;
+   - a cost/scarcity/quota ranking.
+3. Section 6.1 project resource profiles remain authoritative for current:
+   - availability;
+   - scarcity;
+   - cost/quota;
+   - independent-subcontext capability;
+   - environment constraints.
+
+At the start of Strategist work and before issuing tasks:
+- if this composition/availability is stale, unknown, no longer current, or
+  contradicted by an authoritative current inventory or project resource profile,
+  the snapshot is stale for that routing decision and MUST be reconfirmed with the
+  Customer or the authoritative inventory before family-dependent routing;
+- family-dependent routing MUST be resolved before issuing the task;
+- a model absent from the snapshot has unknown family until confirmed.
 
 ------------------------------------------------------------------------
 
 ## 7. Artifact Handoff Protocol
 
 When external execution is needed, the Strategist creates one complete
-task artifact in the configured transport directory, under a unique
-project-associated name such as
-`<transport-dir>/<project>-<run-or-task>-<purpose>.txt`.
+task artifact in the configured transport directory, using the following naming conventions:
+
+Strategist-authored task/directive artifact basename:
+`T_<PROJECT>_<DESCRIPTOR>`
+
+Agent result/evidence/report artifact basename:
+`<PROJECT>_<DESCRIPTOR>`
+
+Rules:
+- `<PROJECT>` is a stable canonical project token;
+- `<PROJECT>` MUST NOT begin with reserved prefix `T_`;
+- `<DESCRIPTOR>` names the scope clearly;
+- the complete basename for an active/open handoff artifact MUST be unique in the
+  configured transport directory so existing artifacts are not silently overwritten;
+- result artifacts MUST NOT keep the leading `T_`;
+- extension matches the artifact format;
+- internal IDs such as T-001 do not replace the filename contract;
+- this rule does NOT automatically extend `T_` to Tech-Lead-authored tasks.
 
 The Customer receives only a short launcher naming Role: Execution Run,
 model, session, and task path. The detailed instructions belong in the
@@ -1379,6 +1528,38 @@ The Strategist should:
 -   periodically simplify governance that no longer earns its cost.
 
 The Strategist should not confuse activity with progress.
+
+### 19.1 Strategist context re-anchor / reset
+
+Substantial Strategist drift includes at minimum:
+
+1. loss/distortion of a Customer decision;
+2. role/authority confusion;
+3. loss/contradiction of the authoritative baseline/current state;
+4. violating same-family immediate-review routing;
+5. using cross-family wholesale audit as ordinary immediate review;
+6. creating an unnecessary Customer handoff/stop;
+7. violating the canonical task/result naming rule;
+8. reopening frozen or closed scope without authority.
+
+First substantial drift in the same Strategist session:
+- STOP substantive synthesis;
+- reread PGOS.md and applicable current project authority/state;
+- publish a re-anchor:
+  objective / authority / scope / fixed decisions / evidence / next step;
+- a re-anchor only RESTATES authority recovered from PGOS.md, durable project state,
+  accepted decisions and current Customer authority;
+- a re-anchor MUST NOT create, broaden, replace or infer authority;
+- continue only if no real STOP boundary remains.
+
+Second substantial drift in the same Strategist session:
+- end normative synthesis in the current session;
+- continue only in a NEW Strategist session with exact handoff.
+
+The re-anchor does NOT reset the drift count.
+A NEW Strategist session resets it.
+
+Style differences, minor wording issues, or a corrected typo are not substantial drift.
 
 ------------------------------------------------------------------------
 
