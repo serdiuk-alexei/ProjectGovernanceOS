@@ -1,9 +1,9 @@
 # ProjectGovernanceOS
 
-**PGOS-Version:** 1.0.0-rc3\
+**PGOS-Version:** 1.0.0-rc4\
 **Status:** released\
-**Revision:** rc3 release --- published from rc3 candidate\
-**Base:** `v1.0.0-rc2`\
+**Revision:** rc4 release --- published from audited rc4 candidate r3\
+**Base:** v1.0.0-rc3\
 **Form:** single-file operating protocol\
 **Purpose:** make AI-assisted project development easier for the
 Customer while preserving context, independent verification, bounded
@@ -323,7 +323,41 @@ unavailable for a mutation task that requires independent review, the
 Run MUST report that limitation in its final artifact and MUST NOT label
 its result independently reviewed.
 
-### 4.4.1 Cross-family wholesale / convergence audit
+### 4.4.1 Per-Subtask Review Gates
+
+Every bounded implementation subtask in a phase-gated substantial Run MUST receive its required immediate review before that subtask is considered complete. Dependent work MUST NOT consume its result before the gate passes. The immediate Reviewer:
+- follows current same-family routing where applicable;
+- remains a separate context/session;
+- independently inspects actual result/evidence;
+- verifies the real claimed capability, not merely Executor narrative;
+- checks relevant regressions and boundaries.
+
+Existing bounded correction rules apply locally to review findings. A dependent subtask MUST NOT begin until its required dependency gate passes. Independent parallel branches MAY continue safely when they do not depend on the failed or unreviewed branch and mutation safety remains intact.
+
+A local technical gate such as PHASE_REVIEW_PASS means only that already-authorized dependent work may consume that result. PHASE_REVIEW_PASS is NOT governance acceptance. Overall governance acceptance remains with the external Strategist after the Run.
+
+### 4.4.2 Final Holistic Review
+
+After all required subtasks pass local gates and required branches converge, a substantial Run whose integration can plausibly fail MUST receive a separate final holistic review.
+That review verifies:
+- integration across subtasks;
+- end-to-end behavior;
+- preservation of earlier verified capabilities;
+- later-phase regressions;
+- interface/assumption consistency;
+- completeness of the overall objective;
+- real relevant execution path.
+
+The final holistic review MUST be performed by ANOTHER Reviewer. The holistic Reviewer MUST use a NEW / FRESH context separate from:
+- the Executor context; and
+- all per-subtask Reviewer context(s).
+
+Normal same-family immediate-review routing still applies to this final holistic Reviewer for mutation Runs.
+This is ordinary Run review. It does NOT automatically become a cross-family wholesale/convergence audit.
+It still does NOT accept work on behalf of the Strategist.
+The Run still ends under the existing Section 5.1 lifecycle and produces one final Run-result artifact.
+
+### 4.4.3 Cross-family wholesale / convergence audit
 
 A separate review mode, not a new core role:
 - cross-family;
@@ -656,8 +690,25 @@ one-launch model, and MUST NOT label the result independently reviewed.
 
 ### 5.2 Long-Session Continuity
 
+Long session != large atomic task.
+Long session = many small, bounded, independently verified subtasks executed under one authorized objective, with no unnecessary Customer round-trips.
+
 Definition:
-"Phase" = a stage of the already-approved task WITHIN ONE Execution Run.
+"Phase" = a stage or subtask of the already-approved objective WITHIN ONE Execution Run.
+
+Working Capability First:
+The default unit of implementation SHOULD be the smallest meaningful working capability that can be independently verified through the real relevant execution path. A new capability SHOULD normally be established before broad formal hardening is layered on top of it. Formal hardening MUST NOT substitute for a missing working product capability.
+
+Dependency Graph and Safe Parallelism:
+A substantial authorized objective MAY be decomposed within one Execution Run into multiple bounded phases/subtasks. Each subtask SHOULD have: one concrete objective, clear inputs/dependencies, bounded mutation surface, explicit acceptance criteria.
+
+A substantial objective MAY be represented as a dependency graph. Independent subtasks MAY execute in parallel when:
+- inputs are independent;
+- mutation surfaces do not conflict;
+- acceptance conditions are independent;
+- execution remains consistent with the project's mutation-safety model.
+
+Parallelism MUST NOT silently weaken the current single-writer canonical mutation invariant. Parallel read-only/research/evidence work is allowed when safe. Parallel work in isolated branches/worktrees/sandboxes/scratch areas MAY be used when explicitly designed. Canonical project mutation remains governed by the existing single-writer rule. This amendment MUST NOT introduce uncontrolled concurrent canonical writers.
 
 Rules:
 - If there is no genuine Customer-owned decision, new material risk, authority gap,
@@ -858,7 +909,8 @@ At minimum it MUST capture, where applicable:
     which separate context performed review, or that genuinely
     independent review was unavailable;
 -   the Reviewer verdict and material findings;
--   the number of correction attempts used (Section 16);
+-   the number of correction attempts used (Section 16), per gate and for the holistic
+    gate where the Run is phase-gated;
 -   unresolved blockers and unresolved findings;
 -   the review-status result (Section 5.1);
 -   the number of Customer interventions after the initial launch;
@@ -1361,6 +1413,19 @@ without repeatedly returning to the Customer.
 
 Do not grant broad authority merely to avoid writing a precise task.
 
+Before issuing a substantial implementation task, the Strategist SHOULD ask whether:
+- it contains multiple independently meaningful capabilities;
+- it combines first implementation with exhaustive hardening;
+- proofs depend on functionality not yet demonstrated;
+- a real-path capability can be demonstrated earlier;
+- smaller phases would reduce context pressure without increasing Customer burden;
+- independent branches can safely run in parallel.
+
+If avoidable monolithic scope is detected, prefer decomposition.
+The remedy for excessive scope SHOULD be decomposition, not a longer prompt.
+
+Strategist authorizes parallelism. Tech Lead designs it when technically non-trivial. Executor schedules it within those bounds.
+
 ### 15.1 Executor STOP Protocol
 
 When safe continuation becomes uncertain because of a boundary
@@ -1401,22 +1466,23 @@ scope, prefer an internal correction loop inside the same Execution Run
 (Section 5.1). Each correction attempt is re-verified by the independent
 Reviewer.
 
-### 16.1 Correction bound
+### 16.1 Correction bounds for Phase-Gated Runs
 
-A normal Execution Run may perform **at most two correction attempts**
-after Reviewer findings.
+Correction limits are gate-local, not one global budget for the whole long Run:
 
-If acceptable review is not achieved after two correction attempts, the
-Run MUST stop correcting and end with its final Run-result artifact
-(Section 7.1) carrying `REVIEWED_WITH_FINDINGS` or `BLOCKED` plus the
-unresolved findings, for disposition by the external Strategist.
+- **Per-subtask gate:** Each subtask review gate may perform at most 2 correction attempts after Reviewer findings. Each correction attempt must be re-verified by the required Reviewer. The count belongs to that gate.
+- **Final holistic gate:** The final holistic review gate may perform at most 2 correction attempts after holistic Reviewer findings. Each correction attempt must be re-verified by the final holistic Reviewer. The count belongs to the holistic gate.
+- **Run without subtask gates:** A Run that is not phase-gated has a single review gate. It may perform at most 2 correction attempts after Reviewer findings. If acceptable review is not achieved, it ends under Section 5.1 with `REVIEWED_WITH_FINDINGS` or `BLOCKED`. The number of correction attempts used is recorded in the final Run-result artifact.
+
+**Anti-reset rule:**
+Renaming, splitting, reopening, or recreating materially the same gate MUST NOT reset its correction count. Do not create an unbounded loop by decomposing one failed correction into artificial new gates.
+
+**Non-convergence:**
+If a required gate cannot pass within its 2 attempts, dependent work MUST NOT consume that failed result. If the failed gate is required for the authorized objective and no already-authorized alternative path can complete the objective, the Run MUST stop correcting and end under existing Section 5.1 and Section 16 semantics with its final Run-result artifact (Section 7.1) carrying `REVIEWED_WITH_FINDINGS` or `BLOCKED` plus the unresolved findings, for disposition by the external Strategist. This does not create new Customer authority or redesign authority.
 
 No unbounded autonomous correction loop is allowed.
 
-A task MAY explicitly set a lower limit. Raising the limit above two
-requires explicit Strategist authorization for that task.
-
-The final artifact MUST record the number of correction attempts used.
+A task MAY explicitly set a lower limit. Raising any gate's limit above two requires explicit Strategist authorization for that task/gate.
 
 ### 16.2 Correction that exceeds the Run
 
@@ -1454,6 +1520,37 @@ Evidence may include:
 -   reproducible observations.
 
 Do not demand ceremony that adds no confidence.
+
+### 17.1 Claim-Matched Evidence
+
+Evidence MUST match the claim being proven.
+
+A real-path claim MUST NOT be established solely by:
+- mocks;
+- stubs;
+- synthetic numbers;
+- fakes;
+- assert True;
+- isolated tests that do not execute the claimed path.
+
+Mocks/stubs/synthetic fixtures remain valid for claims they actually test.
+Reviewer MUST distinguish, where material:
+- implementation evidence;
+- unit-level evidence;
+- integration evidence;
+- real-path evidence.
+
+Green tests do not establish a broader claim than the tested path supports.
+
+### 17.2 Proportional Evidence and Hardening
+
+Evidence and hardening SHOULD be proportional to maturity and risk.
+Do not force a new capability to prove every possible robustness/mutation/adversarial/integration/activation property simultaneously when those checks can safely be layered after the base capability exists.
+
+Default direction:
+working capability → immediate review → next capability → integration / holistic review → proportional hardening
+
+This does NOT weaken stricter controls for high-risk, irreversible, production, security, destructive or externally consequential work.
 
 The Reviewer evaluates the evidence. The external Strategist decides the
 final governance disposition (Section 5.1).

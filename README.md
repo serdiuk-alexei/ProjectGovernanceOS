@@ -11,10 +11,10 @@ directory.
 
 ## Status
 
-**Version:** `v1.0.0-rc3`\
-**Stage:** real-project pilot candidate
+**Version:** `v1.0.0-rc4`\
+**Stage:** real-project pilot release
 
-This release candidate passed the final design/patch review and is
+This release passed the final design/patch review and is
 intended for validation on real projects before a stable `v1.0.0`
 release.
 
