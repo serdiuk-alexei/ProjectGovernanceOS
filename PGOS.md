@@ -1,9 +1,9 @@
 # ProjectGovernanceOS
 
-**PGOS-Version:** 1.0.0-rc4\
+**PGOS-Version:** 1.0.0-rc5\
 **Status:** released\
-**Revision:** rc4 release --- published from audited rc4 candidate r3\
-**Base:** v1.0.0-rc3\
+**Revision:** rc5 release --- published from audited rc5 candidate r3\
+**Base:** v1.0.0-rc4\
 **Form:** single-file operating protocol\
 **Purpose:** make AI-assisted project development easier for the
 Customer while preserving context, independent verification, bounded
@@ -14,7 +14,10 @@ authority, and recoverability.
 ## 1. Prime Directive
 
 PGOS exists to help the Customer build projects. Governance serves
-delivery; delivery does not serve governance.
+delivery; delivery does not serve governance. This principle guides
+judgment within higher authority (Sections 3.1 and 18); it never
+overrides a STOP condition, a required review, or a Customer-owned
+boundary.
 
 The system MUST optimize first for:
 
@@ -29,6 +32,11 @@ The system MUST optimize first for:
     be reviewed before it is presented as complete.
 5.  **Progressive complexity.** Add process, documents, roles, and
     controls only when they solve a real problem.
+
+Context is a resource that affects both cost and quality. Load only what
+the role needs, reference large evidence instead of pasting it, and
+refresh contexts at natural boundaries. Context economy never outranks
+Customer attention or independent verification.
 
 The Customer MUST NOT be used as a routine operator, file clerk, shell
 operator, or message bus between agents when the same work can
@@ -275,10 +283,12 @@ The Reviewer should be independent from the execution context whenever
 reasonably possible. For mutation Execution Runs this independence is
 mandatory, as specified below.
 
-A Reviewer is mandatory for every mutation Execution Run. Review may be
-skipped only for genuinely trivial read-only or non-mutating
-administrative work where independent review would have negligible
-value.
+A Reviewer is mandatory for every mutation Execution Run. For
+non-trivial read-only work, review remains the default and is advisory.
+Review may be skipped only for genuinely trivial read-only or
+non-mutating administrative work where independent review would have
+negligible value. The mandatory same-family, separate-context rules
+below apply to mutation Runs only.
 
 The Reviewer advises and verifies; the external Strategist makes the
 governance disposition (Section 5.1). The Reviewer MUST NOT accept work
@@ -298,11 +308,46 @@ separate context/session from the Executor. It MUST receive the approved
 task and starting checkpoint/status and independently inspect the task,
 the resulting reality, and the relevant evidence: the complete
 post-execution repository status/diff/commits, test evidence, declared
-non-Git side effects, and the prohibited-action list.
+and observed non-Git side effects, and the prohibited-action list.
 
 Executor reasoning, scratch work, narrative, or self-assessment MUST NOT
 be treated as proof. The Reviewer MUST NOT rely only on the Executor
 narrative or on files the Executor chose to present.
+
+In a phase-gated Run (Sections 4.4.1 and 4.4.2) the inspection above is
+scoped per gate. At each gate the Reviewer receives a reproducible
+before/after identity of the reviewed dependency, branch and worktree
+(for example commit IDs, or content hashes for uncommitted state); this
+requires no mandatory commit and no new files. The Reviewer verifies
+every intended change and its test evidence, and keeps a cumulative
+inventory from the starting checkpoint: commits, index and worktree
+changes, untracked files, and declared and observed non-Git side
+effects. For untracked files the Reviewer inventories paths and
+metadata and verifies the contents of authorized, relevant changes,
+using bounded or redacted evidence; it MUST NOT open out-of-scope files
+or secrets merely to complete coverage. A scope violation or pivotal
+uncertainty that cannot be resolved within authorized bounds is
+escalated, or the Run STOPs. The Reviewer never broadens its own
+authority; full coverage means full within authorized boundaries.
+`git status` and `git diff --stat` are signals, not proof; the Reviewer
+independently inspects unexpected and overlapping changes. When the
+delta base is absent or ambiguity persists, the Reviewer broadens to full
+inspection within those boundaries or stops. At a subtask gate the
+Reviewer inspects the full diff of that subtask since the last reviewed
+baseline of the SAME branch/dependency (the verified fork point or the
+starting checkpoint for its first gate), never since the last
+chronological gate of another branch, and its evidence. Even where
+Section 4.4.2 does not require a separate holistic Reviewer, cumulative
+coverage from the starting checkpoint MUST be complete by the end of the
+Run, within authorized boundaries. A required holistic Reviewer receives
+the full diff from the starting checkpoint, the gate verdicts and their
+evidence, and independently inspects the actual integrated delta and the
+real path. For a Run without gates, the inspection above applies as
+stated. Re-verification of a correction covers the findings, an
+independently reconstructed delta of the correction, its associated
+tests, the prior guarantees it may affect with targeted tests, and a
+status check against the cumulative inventory; it escalates to broader
+inspection when the correction's scope grows.
 
 For a mutation Execution Run:
 - the immediate Reviewer MUST be from the SAME model family as the Executor;
@@ -311,9 +356,12 @@ For a mutation Execution Run:
 - same-family immediate review is NOT a wholesale/convergence audit;
 - cross-family review MUST NOT be substituted for the ordinary immediate Reviewer.
 
-If Executor family is unknown, or the environment cannot provide a same-family
-Reviewer in a separate context/session:
-- report this BEFORE mutation;
+If Executor family is unknown, or the environment cannot provide an
+independent eligible same-family Reviewer in a separate context/session
+with the required evidence:
+- report this BEFORE mutation and make no mutation;
+- a task cannot by itself authorize Customer-owned risk (Sections 3, 3.1
+  and 18) such as proceeding without required review;
 - do not perform family-dependent reviewed mutation work;
 - do not label the result reviewed / independently reviewed under the
   immediate-review contract.
@@ -331,6 +379,8 @@ Every bounded implementation subtask in a phase-gated substantial Run MUST recei
 - independently inspects actual result/evidence;
 - verifies the real claimed capability, not merely Executor narrative;
 - checks relevant regressions and boundaries.
+
+One immediate Reviewer MAY continue (`CONTINUE`, Section 6) across successive gates of one Run. It remains separate from the Executor and independently inspects the actual result at every gate. This does not change the requirements for the final holistic Reviewer in Section 4.4.2.
 
 Existing bounded correction rules apply locally to review findings. A dependent subtask MUST NOT begin until its required dependency gate passes. Independent parallel branches MAY continue safely when they do not depend on the failed or unreviewed branch and mutation safety remains intact.
 
@@ -352,7 +402,7 @@ The final holistic review MUST be performed by ANOTHER Reviewer. The holistic Re
 - the Executor context; and
 - all per-subtask Reviewer context(s).
 
-Normal same-family immediate-review routing still applies to this final holistic Reviewer for mutation Runs.
+Normal same-family immediate-review routing still applies to this final holistic Reviewer for mutation Runs: a fresh same-family context, with no cross-family substitution.
 This is ordinary Run review. It does NOT automatically become a cross-family wholesale/convergence audit.
 It still does NOT accept work on behalf of the Strategist.
 The Run still ends under the existing Section 5.1 lifecycle and produces one final Run-result artifact.
@@ -382,15 +432,11 @@ Definitions and authority:
 - It does NOT replace Council of Section 8.
 - It does NOT replace the ordinary same-family immediate Reviewer.
 
-Preferred wholesale/convergence auditors (illustrative examples within the
-Customer-confirmed snapshot filtered by cross-family eligibility; they do NOT
-establish a universal ranking):
-- Claude Opus 5.5
-- Claude Sonnet 5
-- Codex gpt-5.6-sol
-- Codex gpt-6-sol
-
-The chosen wholesale auditor MUST be from a DIFFERENT family than the producer.
+The chosen wholesale auditor MUST be from a DIFFERENT family than the producer,
+determined from the family-membership snapshot in the project resource profile
+(Sections 6.1 and 6.2) or, while the profile has none, from the dated source
+carried in the task (Customer or authoritative current inventory, Section 6.2);
+never inferred from a model name.
 
 ### 4.5 Auditor
 
@@ -478,7 +524,9 @@ PGOS does not support concurrent mutation writers (Section 5.1).
 
 This subsection is the **single normative definition** of Execution Run
 lifecycle and status semantics. Every other section MUST reference this
-subsection and MUST NOT restate or redefine the lifecycle.
+subsection and MUST NOT restate or redefine the lifecycle, except that the
+Execution Run Card (Section 5.3) is the one permitted restatement; it is a
+subordinate summary and never a second definition.
 
 #### Normal mutation path
 
@@ -518,8 +566,8 @@ review of Section 4.4.
 
 That entry, plus the presence or absence of the artifact it names, is
 the complete durable status mechanism. PGOS requires no status log, no
-workflow database, no transaction journal, and no lock service. Run
-status is then read as:
+workflow database, no transaction journal, and no lock service. For a
+mutation Run with an entry, Run status is derived and read as:
 
 -   `ACTIVE` --- an open Run entry exists and the final Run-result
     artifact it names does not yet exist. The Run holds the
@@ -536,9 +584,20 @@ status is then read as:
 The Run never rewrites its own entry to announce its outcome. The
 outcome lives in the artifact the entry already points to.
 
+Runs without an entry. A read-only Run and a Run that stops before any
+mutation open no entry, do not mutate `STATE.md`, and have no mutation
+Run status and no review-status result; none is invented for an
+unreviewed result. Their artifact states the verified facts, the
+advisory review outcome if any, and the blocker where one exists. Every
+Run, with or without an entry, finishes at the unique result path named
+by its task (for a mutation Run, the path its own entry names).
+
 #### Review-status result
 
-A Run that reaches `REVIEWED` carries exactly one review-status result:
+Only a Run that reaches `REVIEWED` carries a review-status result, and
+then exactly one. A STOP after mutation began is
+`NEEDS_RECONCILIATION` and implies no review-status result. The
+results are:
 
 -   `REVIEWED_PASS` --- reviewed, with no material unresolved finding.
 -   `REVIEWED_WITH_FINDINGS` --- reviewed, with material findings
@@ -547,7 +606,10 @@ A Run that reaches `REVIEWED` carries exactly one review-status result:
     passing state; the remaining state is known and described.
 
 A review-status result is a statement about execution and review only.
-It is never an acceptance.
+It is never an acceptance. Run status (`ACTIVE`, `REVIEWED`,
+`NEEDS_RECONCILIATION`) says where the Run stands; the review-status
+result says how review ended. Neither is the other, and neither is
+acceptance.
 
 #### Terminal-side ending
 
@@ -560,9 +622,11 @@ A Run MUST NOT accept, approve, or close out its own work, and MUST NOT
 produce, simulate, or stand in for a Strategist disposition
 (Section 4.1.1). A Run always has a definite ending: if it cannot reach
 `REVIEWED_PASS` within the correction bound of Section 16, it ends
-`REVIEWED_WITH_FINDINGS` or `BLOCKED`; if its state is uncertain, it
-ends `NEEDS_RECONCILIATION` under Section 15.1. Every ending produces
-one final Run-result artifact (Section 7.1).
+`REVIEWED_WITH_FINDINGS` or `BLOCKED`; if its state is uncertain after
+mutation began, it ends `NEEDS_RECONCILIATION` under Section 15.1 (an
+unreconciled mutation is not `BLOCKED`, which requires a known state).
+Every ending, including a read-only success and a STOP before mutation,
+produces one final Run-result artifact (Section 7.1).
 
 **After the final independent review, the Run MUST NOT perform any
 further project mutation.** It does not write its own review status,
@@ -675,6 +739,18 @@ This single rule governs every open entry, whatever its status:
 disposition is: acceptance, rejection, reconciliation, supersession, or
 a declaration of interruption. There is no second path and no exception.
 
+The open-entry rule and the `STATE.md` requirement bind mutation Runs. A
+read-only Run, including reconnaissance under Section 13.1, treats
+preexisting open or uncertain entries and a missing or unusable
+`STATE.md` as objects to inspect and report, not as reasons to stop
+reconnaissance; it stops only on a real blocker.
+
+A mutation Run without a usable `STATE.md` MUST STOP before mutation
+unless its task explicitly authorizes initialization or recovery
+(Sections 12 and 13). In that case a newly created first `STATE.md` may
+open the Run's own entry as its first governed write. No Run erases an
+existing entry or manufactures a permission to do so.
+
 PGOS does not require a custom lock service.
 
 #### Environment obligations
@@ -713,8 +789,8 @@ Parallelism MUST NOT silently weaken the current single-writer canonical mutatio
 Rules:
 - If there is no genuine Customer-owned decision, new material risk, authority gap,
   or explicit PGOS/task STOP condition, the Executor and immediate Reviewer SHOULD
-  stay in the longest practical continuous sessions and proceed through multiple
-  consecutive phases already covered by the same authorization.
+  continue through successive phases already covered by the same authorization,
+  without returning to the Customer.
 
 - Do not stop merely to:
   - return control to the Customer;
@@ -739,9 +815,171 @@ Rules:
 - The immediate Reviewer independently inspects the relevant resulting state/evidence
   for every work phase it reviews.
 
-- Elapsed time, token count or chat length alone are not sufficient reasons to stop.
+- Elapsed time, token count or chat length alone are not reasons to return to the Customer or to end the Run. At a phase boundary, the Executor and the immediate Reviewer MAY — and SHOULD when context is heavy — continue in a fresh context seeded with a short phase note. A context refresh inside one authorized Run is not a handoff and not a new Run.
+
+- A phase note is compact, factual and role-specific (Executor and each Reviewer keep their own). It preserves the task and checkpoints, phase result, findings and gate verdicts, correction counts per gate, the current writer, and the next authorized step. It lives in the Run's working area (outside project files), not in a separate mandatory file. It MUST NOT be written at the declared final Run-result artifact path: that artifact's existence releases the single-writer position (Section 5.1). It is orientation, not evidence: the Reviewer still inspects the actual state (Section 4.4), and refreshed contexts stay independent of each other.
 
 The Customer MUST NOT become a routine operator or message bus (Sections 1 and 3).
+
+### 5.3 Execution Run Card
+
+This card restates, in compressed form, the duties that Sections 4.3,
+4.4--4.4.2, 5.1, 5.2, 7.1, 11, 15.1, 16, 17.1 and 18 place on the
+Executor and Reviewer inside an Execution Run. It is the only permitted
+restatement of those rules and is subordinate to Section 5.1 and to the
+other sections it summarizes. Where the card differs from them, those
+sections govern, and the difference is a PGOS defect to be reported.
+
+Reading rule: agents in a Run load this card, the task artifact, every
+PGOS section the task names and their role's evidence, and also pull
+canonical clauses on ambiguity, safety questions or source conflicts,
+named by the task or not; if that does not resolve it, STOP. The
+Strategist, Tech Lead, Auditor and cross-family auditor (Section 4.4.3)
+read the full PGOS; Council lenses get only the fact packet, question and
+lens instructions. Section 1 never overrides higher authority, a STOP or
+required review.
+
+**Before any mutation** (mutation Runs; a read-only Run, including
+Section 13.1 reconnaissance, only reports open entries and a missing
+`STATE.md` and stops only on a real blocker)
+- Each open Run entry in `STATE.md` needs an explicit Strategist
+  disposition in the task; check the facts it rests on against the named
+  artifacts and repository. If one lacks it, STOP before mutating. If
+  `STATE.md` is missing or unusable, STOP unless the task explicitly
+  authorizes initialization or recovery (Sections 12, 13); a new first
+  `STATE.md` may open the Run's own entry as its first governed write.
+  Never erase an entry or create a permission.
+- Every task names a unique final result path (the same as the Run's own
+  entry, if any); if none, STOP and report in chat.
+- First mutation: fold each disposition into `STATE.md`, close its entry,
+  and open the Run's own entry (Run ID, task, starting checkpoint, result
+  path) in that same edit.
+- Family comes from the task: verified Executor/Reviewer family with a
+  dated source (Customer or authoritative current inventory, Section
+  6.2), never inferred from a model name; recording it in `STATE.md`
+  follows this order, not a separate first mutation. If the family is
+  unknown, no independent same-family Reviewer exists, or required
+  evidence is unavailable: report, make no mutation, do not label the
+  result reviewed.
+
+**Authority**
+- Work only inside the task's scope; STOP rather than improvise. A task
+  cannot authorize Customer-owned risk (Sections 3, 3.1, 18). One
+  canonical writer; parallel work only if read-only or in isolated
+  branches/worktrees the task designs, with non-conflicting surfaces.
+- Section 18: no `sudo`/root, destructive commands, force operations,
+  external publication, deployment or production mutation unless
+  explicitly authorized. Take extra care with credentials, shared history,
+  billing and user data; never expose raw secrets in evidence.
+- Git (Section 11), unless the task is stricter: local commits only when
+  the task explicitly authorizes implementation and a local checkpoint is
+  a normal part of completing it; commit only intended files after
+  inspecting status and diff; no history rewrite, force-push, branch
+  deletion, release, deploy or external push without explicit
+  authorization; preserve unrelated changes; report commit IDs.
+
+**Review**
+- Mutation: review is mandatory, in a separate context, by a Reviewer of
+  the same model family as the Executor; no cross-family substitution.
+  Non-trivial read-only work: review is the default and advisory,
+  skipped only when trivial; same-family is for mutation only.
+- The Reviewer checks reality, not narrative: task, starting checkpoint,
+  diff, commits, tests, declared and observed non-Git side effects,
+  prohibited actions; reports boundary violations, hidden changes and
+  claim/reality mismatches.
+- Scope: each gate gets a reproducible before/after identity of the
+  reviewed dependency, branch and worktree; every intended change and its
+  tests are verified; a cumulative inventory from the starting checkpoint
+  is kept. A subtask delta starts at the last reviewed baseline of the
+  SAME branch/dependency (or the verified fork, or the starting
+  checkpoint for its first gate), never another branch's latest gate.
+  Untracked files: inventory paths and metadata; read contents only of
+  authorized, relevant changes, with bounded or redacted evidence. Never
+  open out-of-scope files or secrets for coverage; a scope violation or
+  pivotal uncertainty means escalate or STOP. `status`/`--stat` are
+  signals; inspect unexpected and overlapping changes directly; if the
+  base is absent or doubt persists, inspect fully within bounds or STOP.
+  Coverage is complete within authorized bounds by Run end; a required
+  holistic Reviewer gets the full diff and gate verdicts and
+  independently inspects the integrated delta and real path. A Run
+  without gates gets one review of the whole result.
+- Reviewers advise and verify, never broaden authority; the external
+  Strategist disposes. Acceptance-affecting findings go into the artifact.
+
+**Gates**
+- In a phase-gated Run, each subtask passes its immediate review before
+  it counts as complete; dependent work MUST NOT begin until it passes.
+  Independent branches may continue safely. One immediate Reviewer may
+  CONTINUE across gates. PHASE_REVIEW_PASS only lets already-authorized
+  dependent work proceed; it is not acceptance.
+- If integration can plausibly fail, a holistic review follows, by a
+  same-family Reviewer in a NEW context separate from the Executor and
+  every gate Reviewer; no cross-family substitution.
+
+**Corrections**
+- At most 2 correction attempts per gate (each subtask gate, the holistic
+  gate, or the single gate of a Run without gates), unless the task sets
+  a lower limit; raising it needs explicit Strategist authorization. Each
+  attempt is re-verified: the findings, an independently reconstructed
+  correction delta, its associated tests, affected prior guarantees
+  (targeted tests) and a status check, broadening if scope grows.
+- Renaming, splitting, reopening, recreating or context-refreshing a gate
+  never resets its count; a retry after a refresh uses the same cap.
+- A failed required gate's result is not used by dependent work. Stop
+  correcting only if no explicitly authorized alternative can complete the
+  objective; then end `REVIEWED_WITH_FINDINGS` or `BLOCKED`. A correction
+  needing new design or exceeding scope ends the Run with findings.
+
+**Evidence and context**
+- Evidence must match the claim (Section 17.1): mocks, stubs, fakes,
+  synthetic numbers, `assert True` or tests off the claimed path do not
+  establish a real-path claim. Separate implementation, unit, integration
+  and real-path evidence where it matters.
+- Evidence files follow Section 7 naming, are referenced by path (hash
+  where useful), and are not overwritten, moved or deleted while an entry
+  is open.
+- Time, tokens or chat length alone never justify returning to the
+  Customer or ending the Run. At a phase boundary the Executor and each
+  immediate Reviewer MAY, and SHOULD when context is heavy, continue in a
+  fresh context seeded with a compact role-specific phase note kept in
+  the Run's working area. It cannot reset correction counts, is
+  orientation not evidence, and is never written at the final artifact
+  path (its existence releases the single writer). Contexts stay
+  separate; not a handoff or new Run.
+
+**STOP (Section 15.1)**
+- If safe continuation is uncertain (boundary, authority conflict,
+  unexpected repository state, PGOS change, missing evidence), stop
+  mutating and write a STOP/blocker record as the final artifact: Run and
+  task ID, trigger, repository and working-tree state, mutations and
+  commits, non-Git side effects, evidence, what was not done, what needs
+  reconciliation.
+- If mutation had begun, the Run status is `NEEDS_RECONCILIATION`, with
+  no review-status implied. A STOP before mutation, like a read-only Run,
+  has no entry, does not touch `STATE.md`, and has no Run status or
+  review-status: state verified facts, any advisory review outcome, and
+  the blocker.
+
+**Ending**
+- After the final review, no further project mutation, including
+  `STATE.md`.
+- Write exactly one final Run-result artifact (Markdown) at the task's
+  unique result path (the same as the Run's entry, if any); never
+  overwrite it. Summary first; test results and failure excerpts, long
+  logs in referenced evidence files.
+- Required (Section 7.1): Run ID, task, starting checkpoint; what was
+  done; files, commits, side effects; tests and evidence; Reviewer model
+  and context, or that independent review was unavailable; verdict and
+  material findings; correction attempts per gate and holistic gate;
+  unresolved blockers and findings; Customer interventions after launch;
+  exact next action expected from the Strategist. For a mutation Run with
+  an entry, also its Run status and, only if it reached `REVIEWED`, its
+  review-status.
+- Review-status is `REVIEWED_PASS`, `REVIEWED_WITH_FINDINGS` or `BLOCKED`
+  only; `NEEDS_RECONCILIATION` is a Run status, not a fourth result.
+  Review-status is never acceptance; the Run does not accept, approve or
+  close its own work or stand in for the Strategist.
+- Reply in chat with the artifact path and a short status only.
 
 ## 6. Model and Session Routing
 
@@ -760,9 +998,25 @@ For every handoff to another agent, state:
 Use `NEW` when independence, clean context, or a new role matters. Use
 `CONTINUE` when continuity with the same role and task materially helps.
 
+**Reading rule.** Agents inside an Execution Run (the Executor and its
+Reviewers) load the Execution Run Card (Section 5.3), the task artifact,
+the PGOS sections the task names and the evidence applicable to their
+role. They also pull canonical PGOS clauses on ambiguity, safety
+questions or source conflicts, and STOP if that does not resolve it,
+whether or not the task names the clause. The Strategist, Tech Lead,
+Auditor and the cross-family auditor (Section 4.4.3) read the full PGOS.
+Council lenses (Section 8)
+receive only the fact packet, the decision question and their lens
+instructions, and do not load PGOS.
+
 Prefer capable but inexpensive models for routine execution and review.
 Spend stronger or scarcer reasoning capacity where it materially
 improves decisions, architecture, investigation, or difficult review.
+
+Immediate review SHOULD by default run on a less expensive model of the
+same family as the Executor, when that model is sufficient for the
+review. For difficult review, use a stronger model within the same
+family. The same-family rule of Section 4.4 is unchanged.
 
 ### 6.1 Project resource profile
 
@@ -774,6 +1028,8 @@ enough to route work intelligently.
 It may include:
 
 -   available models and providers;
+-   model-family membership, as a dated snapshot sourced from the
+    Customer or an authoritative current inventory (Section 6.2);
 -   relative scarcity, cost, or quota constraints;
 -   which environments can create genuinely independent subcontexts;
 -   relevant execution environments and connectors;
@@ -782,48 +1038,26 @@ It may include:
 Durable project documentation SHOULD retain only the routing-relevant
 profile --- not unnecessary account details, credentials, or secrets.
 
-PGOS MUST NOT hardcode a universal vendor or model ranking (the dated snapshot in
-Section 6.2 records family membership only). The profile is a fact about the
+PGOS MUST NOT hardcode a universal vendor or model ranking (the dated snapshot
+kept in the profile, Section 6.2, records family membership only). The profile is a fact about the
 Customer's current environment, not a preference list baked into PGOS.
 
 ### 6.2 Current model-family snapshot
 
-Customer-confirmed snapshot dated 2026-09-29:
-
-Gemini-family:
-- Gemini 3.1 Pro High
-- Gemini 3.8 Flash
-- Gemini 3.7 Flash
-- Gemini 3.6 Flash
-
-Claude-family:
-- Claude Opus 5.5
-- Claude Opus 5
-- Claude Opus 4.8
-- Claude Opus 4.7
-- Claude Opus 4.6
-- Claude Sonnet 5.5
-- Claude Sonnet 5
-- Claude Sonnet 4.6
-- Claude Haiku 4.5
-
-Codex-family:
-- gpt-6-astra
-- gpt-6-sol
-- gpt-6-luna
-- gpt-5.6-sol
-- gpt-5.6-terra
-- gpt-5.6-luna
-- gpt-5.5
+PGOS does not list models. The membership of models in families, used for
+family-dependent routing (Sections 4.4 and 4.4.3), is kept in the project
+resource profile (Section 6.1) as a dated snapshot, sourced from the
+Customer or an authoritative current inventory and never inferred from a
+model name.
 
 Snapshot status and authority:
-1. The 2026-09-29 snapshot records family membership only.
+1. The snapshot records family membership only.
 2. It is NOT:
    - a universal vendor lock;
    - a model-quality ranking;
    - an availability guarantee;
    - a cost/scarcity/quota ranking.
-3. Section 6.1 project resource profiles remain authoritative for current:
+3. The rest of the Section 6.1 project resource profile remains authoritative for current:
    - availability;
    - scarcity;
    - cost/quota;
@@ -832,11 +1066,31 @@ Snapshot status and authority:
 
 At the start of Strategist work and before issuing tasks:
 - if this composition/availability is stale, unknown, no longer current, or
-  contradicted by an authoritative current inventory or project resource profile,
-  the snapshot is stale for that routing decision and MUST be reconfirmed with the
+  contradicted by an authoritative current inventory or the rest of the project
+  resource profile, the snapshot is stale for that routing decision and MUST be reconfirmed with the
   Customer or the authoritative inventory before family-dependent routing;
 - family-dependent routing MUST be resolved before issuing the task;
-- a model absent from the snapshot has unknown family until confirmed.
+- a model absent from the snapshot has unknown family until confirmed; a project
+  profile without a snapshot has unknown families until the Customer or an
+  authoritative current inventory supplies one.
+
+A dated historical snapshot (for example the list in tagged history,
+`v1.0.0-rc4` Section 6.2) supplies candidate membership only, not proof
+of present availability, cost or permissions. The Strategist checks
+family before any family-dependent dispatch, including first adoption
+when the project has no profile, using current Customer confirmation or
+an authoritative current inventory consistent with this section. While
+the profile is absent, the task carries the verified model/family of the
+Executor and Reviewer and the dated source or reference, and the
+Executor and Reviewer rely on it. The Strategist retains the dated
+source, asks the fewest questions needed, and preserves a valid current
+project-specific profile. The result is recorded by the next meaningful
+authorized Execution Run under the normal order of Section 5.1, not as a
+separate first mutation, so first bootstrap needs no circular mutation
+and no project-wide rewrite. No second canon, ranking or mandatory file
+is introduced; transporting a separate snapshot file is not required,
+and any preferred auditor ranking in a source is not copied into the
+profile as normative.
 
 ------------------------------------------------------------------------
 
@@ -894,10 +1148,22 @@ through authorized Execution Run work.
 ### 7.1 Final Run-result artifact
 
 Every Execution Run MUST produce exactly **one self-contained Markdown
-final result artifact** in the configured transport directory.
+final result artifact** in the configured transport directory, at the
+unique result path named by its task (for a mutation Run, the path of its
+own entry). This includes a read-only success and a STOP before
+mutation.
 
 The artifact MUST be sufficient for the external Strategist to
 understand the Run **without reading the terminal transcript**.
+Self-contained means understandable without the transcript, not
+containing all raw data. The artifact SHOULD open with a summary and
+SHOULD give test results and excerpts of failures instead of full logs.
+Long logs and outputs SHOULD go into separate evidence files referenced
+from the artifact by path (and by hash where useful), named by the
+conventions of Section 7; such evidence files are not additional final
+result artifacts, and while the open Run entry remains open they MUST NOT
+be overwritten, moved or deleted. The aim is an artifact the Strategist can read in a
+few minutes.
 
 At minimum it MUST capture, where applicable:
 
@@ -912,7 +1178,11 @@ At minimum it MUST capture, where applicable:
 -   the number of correction attempts used (Section 16), per gate and for the holistic
     gate where the Run is phase-gated;
 -   unresolved blockers and unresolved findings;
--   the review-status result (Section 5.1);
+-   for a mutation Run with an entry, its Run status and, only if it
+    reached `REVIEWED`, its review-status result (Section 5.1), kept
+    distinct; for a read-only Run or a STOP before mutation, neither is
+    stated: give the verified facts, the advisory review outcome if any,
+    and the blocker where one exists;
 -   the number of Customer interventions after the initial launch;
 -   the exact next governance action expected from the external
     Strategist.
@@ -948,7 +1218,11 @@ Council is an advisory mechanism for challenging important decisions
 
 For this first PGOS version, the Strategist is deliberately encouraged
 to use Council **frequently** so the Customer can observe its value in
-practice.
+practice. After roughly the first 5--10 completed Councils in a project,
+the Strategist reviews the `YES`/`NO` observations of Section 8.4 and
+adjusts the Council frequency for that project. The decision is recorded
+by the ordinary path, in the task artifact of the next Run. This is a
+review point, not a numeric threshold or a scoring rule (Section 8.4).
 
 Council SHOULD be considered for:
 
@@ -1021,6 +1295,10 @@ The Council Executor:
 6.  creates one Council report artifact;
 7.  **adds no synthesis, recommendation, vote, interpretation, or new
     substantive reasoning of its own**.
+
+Lenses SHOULD run on inexpensive models unless the decision requires
+strong reasoning. The fact packet is compact. Each lens response is
+bounded in length (about one page) and structured.
 
 The Council report preserves the three conclusions separately and
 records model/session/completion metadata.
@@ -1115,7 +1393,9 @@ resolved Run leaves behind whatever durable outcome mattered ---
 decisions, state, blockers --- not a permanent per-Run record.
 `STATE.md` MUST NOT become a universal workflow database, a Run log, a
 transaction journal, or a rigid schema. Where detail belongs elsewhere,
-`STATE.md` may simply point to it.
+`STATE.md` may simply point to it. `STATE.md` SHOULD stay short enough to
+be read at the start of every session; detail is moved into documents it
+references.
 
 ### 9.2 Recovery sufficiency
 
@@ -1264,7 +1544,8 @@ If the project is new:
     mandatory minimum of Section 9.1.
 6.  Use a Tech Lead if initial architecture or initialization is
     technically non-trivial.
-7.  Use Council liberally for consequential initial design choices.
+7.  Use Council liberally for consequential initial design choices,
+    subject to the Council review point of Section 8.
 8.  Prepare one initialization task artifact for an Executor.
 9.  The Executor creates the project workspace, copies the current
     `PGOS.md` into the project, creates `STATE.md` (Section 9.1),
@@ -1358,7 +1639,9 @@ An editor of `PGOS.md` should:
 -   preserve unrelated rules;
 -   avoid opportunistic redesign;
 -   keep the Execution Run lifecycle defined normatively in exactly one
-    place (Section 5.1), with every other mention a reference to it;
+    place (Section 5.1), with every other mention a reference to it,
+    except that the Execution Run Card (Section 5.3) is the only
+    permitted restatement and is subordinate to Section 5.1;
 -   identify what changed and any compatibility implications;
 -   increment the PGOS version identifier appropriately.
 
@@ -1383,7 +1666,11 @@ If active work conflicts with the new PGOS, pause or re-plan only what
 is necessary.
 
 Do not perform a wholesale project migration merely because `PGOS.md`
-changed.
+changed. When a project adopts this version without a model-family
+profile, the Strategist establishes it as described in Section 6.2
+(Customer or authoritative current inventory; the task carries the
+verified family and dated source meanwhile), folded in by the next
+meaningful authorized Run; adoption alone triggers no profile rewrite.
 
 If project artifacts need adaptation, the Strategist plans the minimum
 necessary adaptation and delegates mutation to an Executor, followed by
@@ -1406,7 +1693,16 @@ Every substantial Executor task should make clear:
 -   whether mutation is allowed;
 -   Git permissions;
 -   server/production permissions if relevant;
--   stop conditions.
+-   stop conditions;
+-   the PGOS sections the Executor must load beyond the card (exception
+    sections), including those needed for reconnaissance, Council and
+    initialization;
+-   genuine higher authority and routing;
+-   for family-dependent routing, the verified Executor/Reviewer model
+    and family with a dated source (Section 6.2);
+-   where relevant evidence is located;
+-   the unique final result path, including for read-only work and a
+    pre-entry STOP.
 
 A task should grant enough authority to finish its bounded objective
 without repeatedly returning to the Customer.
@@ -1438,13 +1734,17 @@ produced, important actions not performed, and what requires
 reconciliation. The STOP/blocker record is delivered as the Run's final
 Run-result artifact (Section 7.1).
 
-If the Run had already begun mutating, it becomes
+If the Run had already begun mutating, its Run status becomes
 `NEEDS_RECONCILIATION` (Section 5.1) and its artifact declares the
-resulting state unreconciled. If the Executor stopped **before any
-project mutation** --- including a stop required by the open-entry rule
-of Section 5.1 --- no Run entry was ever opened, nothing requires
-reconciliation, and the stop adds no new open entry and no new
-blockage.
+resulting state unreconciled; no review-status result is implied. If the
+Executor stopped **before any project mutation** --- including a stop
+required by the open-entry rule of Section 5.1 --- no Run entry was ever
+opened, nothing requires reconciliation, and the stop adds no new open
+entry and no new blockage. The same holds for a read-only Run: no entry,
+no change to `STATE.md`, and no Run status or review-status, which is
+not invented for an unreviewed result. Its artifact states the verified
+facts, the advisory review outcome if any, and the blocker where one
+exists, and is written at the task's unique result path.
 A Run whose open entry names an artifact that was never produced is in
 the same state, whether or not its entry still reads `ACTIVE`.
 
@@ -1475,7 +1775,7 @@ Correction limits are gate-local, not one global budget for the whole long Run:
 - **Run without subtask gates:** A Run that is not phase-gated has a single review gate. It may perform at most 2 correction attempts after Reviewer findings. If acceptable review is not achieved, it ends under Section 5.1 with `REVIEWED_WITH_FINDINGS` or `BLOCKED`. The number of correction attempts used is recorded in the final Run-result artifact.
 
 **Anti-reset rule:**
-Renaming, splitting, reopening, or recreating materially the same gate MUST NOT reset its correction count. Do not create an unbounded loop by decomposing one failed correction into artificial new gates.
+Renaming, splitting, reopening, or recreating materially the same gate MUST NOT reset its correction count. Do not create an unbounded loop by decomposing one failed correction into artificial new gates. A context refresh (Section 5.2) is not a correction attempt and does not reset the count; retrying the same correction in a refreshed context counts against the same gate's cap of 2.
 
 **Non-convergence:**
 If a required gate cannot pass within its 2 attempts, dependent work MUST NOT consume that failed result. If the failed gate is required for the authorized objective and no already-authorized alternative path can complete the objective, the Run MUST stop correcting and end under existing Section 5.1 and Section 16 semantics with its final Run-result artifact (Section 7.1) carrying `REVIEWED_WITH_FINDINGS` or `BLOCKED` plus the unresolved findings, for disposition by the external Strategist. This does not create new Customer authority or redesign authority.
@@ -1617,7 +1917,8 @@ The Strategist should:
 -   ask clarifying questions when missing information materially affects
     correctness;
 -   avoid asking questions whose answers can be obtained by an Executor;
--   proactively use Council during this first PGOS version;
+-   proactively use Council during this first PGOS version, subject to
+    the Council review point of Section 8;
 -   proactively use independent review;
 -   prefer one high-quality artifact handoff over many conversational
     fragments;
@@ -1641,7 +1942,10 @@ Substantial Strategist drift includes at minimum:
 
 First substantial drift in the same Strategist session:
 - STOP substantive synthesis;
-- reread PGOS.md and applicable current project authority/state;
+- re-check against PGOS.md and applicable current project authority/state, reloading
+  only the sections relevant to the drift when the full file is still reliably in
+  context (otherwise, and always on doubt about authority or baseline, reread
+  PGOS.md in full);
 - publish a re-anchor:
   objective / authority / scope / fixed decisions / evidence / next step;
 - a re-anchor only RESTATES authority recovered from PGOS.md, durable project state,
@@ -1651,10 +1955,40 @@ First substantial drift in the same Strategist session:
 
 Second substantial drift in the same Strategist session:
 - end normative synthesis in the current session;
-- continue only in a NEW Strategist session with exact handoff.
+- continue only in a NEW Strategist session with exact handoff, prepared as
+  in the rotation rules below (a mandatory reset needs no elective opt-in).
 
 The re-anchor does NOT reset the drift count.
 A NEW Strategist session resets it.
+
+Optional session rotation (not drift):
+- at each natural safe boundary (accepted Run, finished milestone, closed
+  material decision) the Strategist makes one short offer of stay or new
+  session, not repeated at the same boundary. Pending critical work (an
+  unresolved critical operation or work that cannot yet be resumed safely
+  from durable evidence) is not a safe boundary, even for offering. The
+  offer changes nothing automatically and does not hold routine work for a
+  reply; silence is never consent and the session simply continues, with
+  no Customer confirmation needed to resume in the same chat;
+- only explicit Customer opt-in permits beginning a handoff or switch.
+  After consent the Strategist prepares a uniquely named handoff in the
+  configured transport directory (Section 7) and gives the Customer its
+  locator and the next allowed step;
+- the handoff is compact and covers open work, unrecorded decisions and
+  dispositions, sources by tier (canon, durable state, dated chat-only
+  statements), contradictions, and unknowns and constraints. It holds no
+  secrets and only restates authority, never creating or broadening it;
+  rotation grants no project mutation (Section 4.1);
+- the prior session stays read-only (no project mutation) until it is
+  explicitly restored; exactly one Strategist is active. The new
+  Strategist independently reconstructs and verifies authority,
+  restrictions, open Runs and dispositions, and the next safe action from
+  current PGOS and durable evidence (Sections 3.1 and 20), resolves
+  material mismatches under Section 3.1 or stops, and rereads PGOS.md in
+  full on doubt about authority or baseline;
+- rotation is not a drift event and does not increase the drift count, and
+  it never bypasses the drift controls above: the mandatory second-drift
+  stop and reset remain in force.
 
 Style differences, minor wording issues, or a corrected typo are not substantial drift.
 
@@ -1718,7 +2052,9 @@ observation over premature optimization.
 
 For the initial projects:
 
--   invoke Council more often than the minimum strictly necessary;
+-   invoke Council more often than the minimum strictly necessary, until
+    the Council review point of Section 8 adjusts the frequency for the
+    project;
 -   preserve Council artifacts so their usefulness can be evaluated;
 -   use Reviewer by default;
 -   observe where Customer attention is still being wasted;
